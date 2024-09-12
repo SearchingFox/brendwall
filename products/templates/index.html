@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Управление продуктами</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table, th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        button {
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Добавить новый продукт</h1>
+<form id="product-form">
+    <div>
+        <label for="name">Название:</label><br>
+        <input type="text" id="name" name="name">
+    </div>
+    <div>
+        <label for="description">Описание:</label><br>
+        <textarea id="description" name="description"></textarea>
+    </div>
+    <div>
+        <label for="price">Цена:</label><br>
+        <input type="number" id="price" name="price">
+    </div>
+    <button type="submit">Отправить</button>
+</form>
+
+<h1>Список продуктов</h1>
+<table id="product-table">
+    <thead>
+        <tr>
+            <th>Название</th>
+            <th>Описание</th>
+            <th>Цена</th>
+        </tr>
+    </thead>
+    <tbody>
+    </tbody>
+</table>
+
+<script>
+    async function listProducts() {
+        try {
+            const response = await fetch('api/products/list');
+            const products = await response.json();
+            const tableBody = document.getElementById('product-table').getElementsByTagName('tbody')[0];
+            tableBody.innerHTML = '';
+
+            products.forEach(product => {
+                const row = tableBody.insertRow();
+                row.insertCell(0).textContent = product.name;
+                row.insertCell(1).textContent = product.description;
+                row.insertCell(2).textContent = product.price;
+            });
+        } catch (error) {
+            console.error('Ошибка при получении продуктов:', error);
+        }
+    }
+
+    async function createProduct(event) {
+        event.preventDefault();
+
+        const name = document.getElementById('name').value;
+        const description = document.getElementById('description').value;
+        const price = parseFloat(document.getElementById('price').value);
+
+        try {
+            const response = await fetch('api/products/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ name, description, price }),
+            });
+
+            if (response.ok) {
+                document.getElementById('product-form').reset();
+                listProducts();
+            } else {
+                const errorData = await response.json();
+                if (errorData.name) {
+                    alert(`Ошибка: ${errorData.name[0]}`);
+                } else if (errorData.price) {
+                    alert(`Ошибка: ${errorData.price[0]}`);
+                }
+            }
+        } catch (error) {
+            console.error('Ошибка при добавлении продукта:', error);
+        }
+    }
+
+    document.getElementById('product-form').addEventListener('submit', createProduct);
+
+    window.onload = listProducts;
+</script>
+</body>
+</html>
